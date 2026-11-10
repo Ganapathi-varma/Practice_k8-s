@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kubernetes: Stateful vs Stateless</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #1e1e2e;
+    color: #e0e0e0;
+    padding: 20px;
+  }
+  .slide {
+    width: 1000px;
+    min-height: 640px;
+    margin: 0 auto 40px;
+    background: linear-gradient(135deg, #2a2a3e 0%, #1e1e2e 100%);
+    border-radius: 16px;
+    padding: 45px 55px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    border: 1px solid #3a3a52;
+  }
+  h1 {
+    font-size: 38px;
+    color: #89b4fa;
+    margin-bottom: 8px;
+    border-bottom: 3px solid #89b4fa;
+    padding-bottom: 12px;
+  }
+  .subtitle { font-size: 17px; color: #a6adc8; margin-bottom: 28px; }
+  h2 {
+    font-size: 24px;
+    margin: 22px 0 14px;
+  }
+  .cols { display: flex; gap: 28px; }
+  .card {
+    flex: 1;
+    background: #313244;
+    border-radius: 12px;
+    padding: 24px;
+    border-top: 5px solid;
+  }
+  .stateless { border-color: #f38ba8; }
+  .stateful { border-color: #a6e3a1; }
+  .stateless h2 { color: #f38ba8; }
+  .stateful h2 { color: #a6e3a1; }
+  ul { list-style: none; }
+  li {
+    font-size: 16px;
+    line-height: 1.7;
+    margin-bottom: 12px;
+    padding-left: 26px;
+    position: relative;
+  }
+  li::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: #89b4fa;
+    font-weight: bold;
+  }
+  .highlight { color: #f9e2af; font-weight: 600; }
+  .k8s { color: #94e2d5; font-weight: 600; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 15px;
+  }
+  th, td {
+    border: 1px solid #45475a;
+    padding: 12px 14px;
+    text-align: left;
+  }
+  th { background: #45475a; color: #cdd6f4; font-size: 16px; }
+  td:first-child { color: #a6adc8; font-weight: 600; width: 180px; }
+  .badge {
+    display: inline-block;
+    background: #89b4fa;
+    color: #1e1e2e;
+    font-size: 13px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-left: 8px;
+  }
+  .footer { margin-top: 24px; font-size: 14px; color: #6c7086; text-align: center; }
+  .keypoint {
+    background: #11111b;
+    border-left: 4px solid #f9e2af;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-top: 20px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1 -->
+<div class="slide">
+  <h1>Kubernetes: Stateful vs Stateless Applications</h1>
+  <p class="subtitle">Core concept in Kubernetes &amp; cloud-native architecture</p>
+
+  <div class="cols">
+    <div class="card stateless">
+      <h2>Stateless</h2>
+      <ul>
+        <li><span class="highlight">Does not store past data</span> — each request is independent.</li>
+        <li>No memory of previous interactions; nothing is saved after the request completes.</li>
+        <li>Relies on <span class="highlight">non-persistent data</span> — data is lost when the pod, node, or cluster stops.</li>
+        <li>If a pod is deleted, <span class="highlight">there is no guarantee</span> the data is preserved.</li>
+        <li>Non-persistent data is mainly used for <span class="highlight">logging</span> (system logs, container logs, etc.).</li>
+        <li>Can be deployed as a set of <span class="highlight">identical replicas</span>; each replica handles requests independently without coordinating with others.</li>
+        <li>Deployed in Kubernetes using a <span class="k8s">Deployment</span>.</li>
+      </ul>
+    </div>
+
+    <div class="card stateful">
+      <h2>Stateful</h2>
+      <ul>
+        <li><span class="highlight">Stores and remembers past data</span> across requests and restarts.</li>
+        <li>Uses <span class="highlight">persistent storage</span> — data survives pod/node restarts.</li>
+        <li>Each replica has a <span class="highlight">stable, unique identity</span> and its own storage.</li>
+        <li>Replicas are <span class="highlight">not interchangeable</span>; order and identity matter.</li>
+        <li>Used to <span class="highlight">solve the data-loss problem</span> of stateless apps.</li>
+        <li>Examples: databases, message queues, caches (MySQL, Kafka, Redis).</li>
+        <li>Deployed in Kubernetes using a <span class="k8s">StatefulSet</span> + <span class="k8s">PersistentVolume</span>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <strong>One-line answer for interview:</strong>
+    A <span style="color:#f38ba8">stateless</span> application keeps no record of previous requests — any replica can serve any request. A <span style="color:#a6e3a1">stateful</span> application remembers data and needs persistent storage and a stable identity.
+  </div>
+</div>
+
+<!-- SLIDE 2 -->
+<div class="slide">
+  <h1>Quick Comparison &amp; Interview Notes</h1>
+  <p class="subtitle">Side-by-side differences you can recall quickly</p>
+
+  <table>
+    <tr><th>Aspect</th><th>Stateless</th><th>Stateful</th></tr>
+    <tr><td>Data storage</td><td>No past data stored</td><td>Stores &amp; remembers data</td></tr>
+    <tr><td>Persistence</td><td>Non-persistent (data lost on stop)</td><td>Persistent (data survives restarts)</td></tr>
+    <tr><td>Pod deletion</td><td>No guarantee data is saved</td><td>Data retained via PersistentVolume</td></tr>
+    <tr><td>Replicas</td><td>Identical, interchangeable</td><td>Unique identity, not interchangeable</td></tr>
+    <tr><td>Request handling</td><td>Each request independent</td><td>Depends on stored context/state</td></tr>
+    <tr><td>Scaling</td><td>Easy — just add replicas</td><td>Harder — needs ordered, stable scaling</td></tr>
+    <tr><td>K8s object</td><td>Deployment</td><td>StatefulSet</td></tr>
+    <tr><td>Examples</td><td>Web/API servers, logging</td><td>Databases, Kafka, Redis</td></tr>
+  </table>
+
+  <h2 style="color:#89b4fa; margin-top:28px;">Why a Deployment is called "stateless"</h2>
+  <ul>
+    <li>A <span class="k8s">Deployment</span> won't save past data — it can't store data permanently.</li>
+    <li>If you delete a pod, there is <span class="highlight">no guarantee</span> the data is kept.</li>
+    <li>It depends on non-persistent data (removed when pod/node/cluster stops).</li>
+    <li>To avoid this problem, we use <span class="highlight">stateful applications</span> (StatefulSet + persistent storage).</li>
+  </ul>
+
+  <div class="keypoint">
+    <strong>Remember:</strong> Stateless = no memory, scale freely, use Deployment.
+    Stateful = has memory, needs persistent storage + stable identity, use StatefulSet.
+  </div>
+
+  <p class="footer">Stateful vs Stateless — Interview Reference</p>
+</div>
+
+<!-- SLIDE 3 -->
+<div class="slide">
+  <h1>Scaling Replicas: Deployment vs StatefulSet</h1>
+  <p class="subtitle">What happens when you scale up or scale down</p>
+
+  <div class="cols">
+    <div class="card stateless">
+      <h2>Deployment (Stateless)</h2>
+      <ul>
+        <li><strong>Scale up:</strong> new pods created <span class="highlight">all at once, in parallel</span> — no ordering.</li>
+        <li>Pods get <span class="highlight">random names</span> (e.g. <code>myapp-7d8f-xk2p9</code>).</li>
+        <li>Every pod is <span class="highlight">identical &amp; interchangeable</span> — any pod serves any request.</li>
+        <li>They <span class="highlight">share nothing</span>: no stable identity, no dedicated storage.</li>
+        <li><strong>Scale down:</strong> pods killed in <span class="highlight">any order</span>; local data is <span class="highlight">lost</span>.</li>
+        <li>Scaling is <span class="highlight">fast &amp; easy</span> — pods don't coordinate or own data.</li>
+      </ul>
+    </div>
+
+    <div class="card stateful">
+      <h2>StatefulSet (Stateful)</h2>
+      <ul>
+        <li><strong>Scale up:</strong> pods created <span class="highlight">one at a time, in order</span>: <code>db-0 → db-1 → db-2</code>.</li>
+        <li>Each pod waits until the previous one is <span class="highlight">Running &amp; Ready</span>.</li>
+        <li>Pods get <span class="highlight">stable names</span> (ordinal index) and keep them.</li>
+        <li>Each pod has its <span class="highlight">own PersistentVolume</span> bound to its identity.</li>
+        <li><strong>Scale down:</strong> pods removed in <span class="highlight">reverse order</span> (highest first), one at a time.</li>
+        <li>The <span class="highlight">PersistentVolume is NOT deleted</span> — data survives &amp; reattaches on scale-up.</li>
+      </ul>
+    </div>
+  </div>
+
+  <table style="margin-top:22px;">
+    <tr><th>Behavior</th><th>Deployment</th><th>StatefulSet</th></tr>
+    <tr><td>Creation order</td><td>Parallel, all at once</td><td>Sequential (0, 1, 2…)</td></tr>
+    <tr><td>Deletion order</td><td>Any order</td><td>Reverse (n…1, 0)</td></tr>
+    <tr><td>Pod names</td><td>Random hash</td><td>Stable ordinal (app-0)</td></tr>
+    <tr><td>Storage per pod</td><td>Shared / none</td><td>Own PersistentVolume</td></tr>
+    <tr><td>Interchangeable?</td><td>Yes</td><td>No</td></tr>
+    <tr><td>Data on scale-down</td><td>Lost</td><td>Preserved (PV kept)</td></tr>
+    <tr><td>Scaling speed</td><td>Fast</td><td>Slower (ordered)</td></tr>
+  </table>
+
+  <div class="keypoint">
+    <strong>One-line answer:</strong> In a <span style="color:#f38ba8">Deployment</span>, scaling adds/removes interchangeable pods in parallel with no data preserved. In a <span style="color:#a6e3a1">StatefulSet</span>, pods scale one at a time in order, each keeping its own stable identity and PersistentVolume, so data survives.
+  </div>
+
+  <p class="footer">Stateful vs Stateless — Interview Reference</p>
+</div>
+
+</body>
+</html>

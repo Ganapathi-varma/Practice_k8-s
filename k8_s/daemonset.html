@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kubernetes: DaemonSet</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #1e1e2e;
+    color: #e0e0e0;
+    padding: 20px;
+  }
+  .slide {
+    width: 1000px;
+    min-height: 640px;
+    margin: 0 auto 40px;
+    background: linear-gradient(135deg, #2a2a3e 0%, #1e1e2e 100%);
+    border-radius: 16px;
+    padding: 45px 55px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    border: 1px solid #3a3a52;
+  }
+  h1 {
+    font-size: 38px;
+    color: #89b4fa;
+    margin-bottom: 8px;
+    border-bottom: 3px solid #89b4fa;
+    padding-bottom: 12px;
+  }
+  .subtitle { font-size: 17px; color: #a6adc8; margin-bottom: 28px; }
+  h2 {
+    font-size: 24px;
+    margin: 22px 0 14px;
+  }
+  .cols { display: flex; gap: 28px; }
+  .card {
+    flex: 1;
+    background: #313244;
+    border-radius: 12px;
+    padding: 24px;
+    border-top: 5px solid;
+  }
+  .daemon { border-color: #fab387; }
+  .deploy { border-color: #f38ba8; }
+  .daemon h2 { color: #fab387; }
+  .deploy h2 { color: #f38ba8; }
+  ul { list-style: none; }
+  li {
+    font-size: 16px;
+    line-height: 1.7;
+    margin-bottom: 12px;
+    padding-left: 26px;
+    position: relative;
+  }
+  li::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: #89b4fa;
+    font-weight: bold;
+  }
+  .highlight { color: #f9e2af; font-weight: 600; }
+  .k8s { color: #94e2d5; font-weight: 600; }
+  code {
+    background: #11111b;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #a6e3a1;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 15px;
+  }
+  th, td {
+    border: 1px solid #45475a;
+    padding: 12px 14px;
+    text-align: left;
+  }
+  th { background: #45475a; color: #cdd6f4; font-size: 16px; }
+  td:first-child { color: #a6adc8; font-weight: 600; width: 180px; }
+  .badge {
+    display: inline-block;
+    background: #89b4fa;
+    color: #1e1e2e;
+    font-size: 13px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-left: 8px;
+  }
+  .footer { margin-top: 24px; font-size: 14px; color: #6c7086; text-align: center; }
+  .keypoint {
+    background: #11111b;
+    border-left: 4px solid #f9e2af;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-top: 20px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  pre {
+    background: #11111b;
+    border: 1px solid #45475a;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-top: 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #cdd6f4;
+    overflow-x: auto;
+  }
+  pre .key { color: #89b4fa; }
+  pre .val { color: #a6e3a1; }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1 -->
+<div class="slide">
+  <h1>Kubernetes: DaemonSet</h1>
+  <p class="subtitle">Used for monitoring — runs a pod on every server (node), scaling automatically with the number of servers</p>
+
+  <div class="cols">
+    <div class="card daemon">
+      <h2>What is a DaemonSet?</h2>
+      <ul>
+        <li>Mainly used for <span class="highlight">monitoring</span> — runs a monitoring/agent pod on every server (node).</li>
+        <li>The number of pods <span class="highlight">increases based on the servers</span> — one pod per node, so more servers means more pods.</li>
+        <li>There is <span class="highlight">no replicas field set</span> for a DaemonSet — the node/server count decides the pod count automatically.</li>
+        <li>When a <span class="highlight">new server (node) is added</span>, a pod is automatically scheduled onto it.</li>
+        <li>When a <span class="highlight">node is removed</span>, its DaemonSet pod is garbage-collected.</li>
+        <li>Can target a <span class="highlight">subset of nodes</span> using <span class="k8s">nodeSelector</span> / node affinity / tolerations.</li>
+        <li>Deployed in Kubernetes using a <span class="k8s">DaemonSet</span> object.</li>
+      </ul>
+    </div>
+
+    <div class="card deploy">
+      <h2>Monitoring Use Cases</h2>
+      <ul>
+        <li><span class="highlight">Monitoring</span> / metrics agents on every node (Prometheus Node Exporter, Datadog agent).</li>
+        <li><span class="highlight">Log collection</span> agents per node (Fluentd, Fluent Bit, Filebeat).</li>
+        <li><span class="highlight">Networking</span> plugins / CNI (Calico, Cilium, kube-proxy).</li>
+        <li><span class="highlight">Storage</span> daemons (Ceph, GlusterFS).</li>
+        <li><span class="highlight">Security</span> &amp; compliance agents running per node.</li>
+        <li>Anything that must observe or serve the <span class="highlight">node/server it runs on</span>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <strong>One-line answer for interview:</strong>
+    A <span style="color:#fab387">DaemonSet</span> is used for <span class="highlight">monitoring</span>: it runs a copy of a pod on every server (node). The pod count <span class="highlight">increases with the number of servers</span>, and there is <span class="highlight">no replicas field</span> — the node count decides how many pods run.
+  </div>
+</div>
+
+<!-- SLIDE 2 -->
+<div class="slide">
+  <h1>DaemonSet vs Deployment vs StatefulSet</h1>
+  <p class="subtitle">Where DaemonSet fits among the core workload objects</p>
+
+  <table>
+    <tr><th>Aspect</th><th>Deployment</th><th>StatefulSet</th><th>DaemonSet</th></tr>
+    <tr><td>Purpose</td><td>Stateless apps</td><td>Stateful apps</td><td>One pod per node</td></tr>
+    <tr><td>Replica count</td><td>You set it</td><td>You set it</td><td>Auto = node count</td></tr>
+    <tr><td>Pod identity</td><td>Random hash</td><td>Stable ordinal</td><td>Tied to its node</td></tr>
+    <tr><td>Scheduling</td><td>Any available node</td><td>Any available node</td><td>Every matching node</td></tr>
+    <tr><td>New node added</td><td>No change</td><td>No change</td><td>Pod auto-added</td></tr>
+    <tr><td>Scaling model</td><td>Add/remove replicas</td><td>Ordered replicas</td><td>Follows cluster size</td></tr>
+    <tr><td>Examples</td><td>Web/API servers</td><td>Databases, Kafka</td><td>Log/monitor agents</td></tr>
+  </table>
+
+  <h2 style="color:#89b4fa; margin-top:28px;">Key behaviors</h2>
+  <ul>
+    <li>DaemonSet pods are scheduled by the DaemonSet controller to honor <span class="highlight">every eligible node</span>.</li>
+    <li>Use <span class="k8s">tolerations</span> so pods can also run on <span class="highlight">tainted nodes</span> (e.g. control-plane nodes).</li>
+    <li>Use <span class="k8s">nodeSelector</span> or <span class="k8s">affinity</span> to restrict to a <span class="highlight">subset of nodes</span> (e.g. only GPU nodes).</li>
+    <li>Supports <span class="highlight">rolling updates</span> via <code>updateStrategy: RollingUpdate</code>.</li>
+  </ul>
+
+  <div class="keypoint">
+    <strong>Remember:</strong> Deployment = many interchangeable stateless pods · StatefulSet = ordered pods with identity + storage · DaemonSet = exactly one pod per node for node-level work.
+  </div>
+
+  <p class="footer">Kubernetes Workloads — Interview Reference</p>
+</div>
+
+<!-- SLIDE 3 -->
+<div class="slide">
+  <h1>DaemonSet YAML Example</h1>
+  <p class="subtitle">A node-level log collector running on every node</p>
+
+  <pre>
+<span class="key">apiVersion:</span> apps/v1
+<span class="key">kind:</span> <span class="val">DaemonSet</span>
+<span class="key">metadata:</span>
+  <span class="key">name:</span> <span class="val">fluentd-logger</span>
+  <span class="key">namespace:</span> <span class="val">logging</span>
+<span class="key">spec:</span>
+  <span class="key">selector:</span>
+    <span class="key">matchLabels:</span>
+      <span class="key">app:</span> <span class="val">fluentd-logger</span>
+  <span class="key">template:</span>
+    <span class="key">metadata:</span>
+      <span class="key">labels:</span>
+        <span class="key">app:</span> <span class="val">fluentd-logger</span>
+    <span class="key">spec:</span>
+      <span class="key">tolerations:</span>          <span style="color:#6c7086"># also run on control-plane nodes</span>
+        - <span class="key">key:</span> node-role.kubernetes.io/control-plane
+          <span class="key">operator:</span> Exists
+          <span class="key">effect:</span> NoSchedule
+      <span class="key">containers:</span>
+        - <span class="key">name:</span> <span class="val">fluentd</span>
+          <span class="key">image:</span> <span class="val">fluent/fluentd:v1.16</span>
+          <span class="key">resources:</span>
+            <span class="key">limits:</span>
+              <span class="key">memory:</span> <span class="val">200Mi</span>
+          <span class="key">volumeMounts:</span>
+            - <span class="key">name:</span> varlog
+              <span class="key">mountPath:</span> /var/log
+      <span class="key">volumes:</span>
+        - <span class="key">name:</span> varlog
+          <span class="key">hostPath:</span>
+            <span class="key">path:</span> /var/log
+  </pre>
+
+  <h2 style="color:#89b4fa;">Handy commands</h2>
+  <ul>
+    <li><code>kubectl get daemonset -n logging</code> — list DaemonSets and desired/current/ready counts.</li>
+    <li><code>kubectl describe ds fluentd-logger -n logging</code> — inspect scheduling &amp; events.</li>
+    <li><code>kubectl get pods -o wide -l app=fluentd-logger</code> — see one pod per node.</li>
+    <li><code>kubectl rollout status ds/fluentd-logger -n logging</code> — track a rolling update.</li>
+  </ul>
+
+  <div class="keypoint">
+    <strong>One-line answer:</strong> A DaemonSet has no <code>replicas</code> field — it schedules a pod onto every matching node, uses <code>hostPath</code> or host resources to work at the node level, and relies on <code>tolerations</code>/<code>nodeSelector</code> to control exactly which nodes get a pod.
+  </div>
+
+  <p class="footer">Kubernetes Workloads — Interview Reference</p>
+</div>
+
+</body>
+</html>

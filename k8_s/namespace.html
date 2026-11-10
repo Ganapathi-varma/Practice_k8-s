@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kubernetes: Default Namespaces</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #1e1e2e;
+    color: #e0e0e0;
+    padding: 20px;
+  }
+  .slide {
+    width: 1000px;
+    min-height: 640px;
+    margin: 0 auto 40px;
+    background: linear-gradient(135deg, #2a2a3e 0%, #1e1e2e 100%);
+    border-radius: 16px;
+    padding: 45px 55px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    border: 1px solid #3a3a52;
+  }
+  h1 {
+    font-size: 38px;
+    color: #89b4fa;
+    margin-bottom: 8px;
+    border-bottom: 3px solid #89b4fa;
+    padding-bottom: 12px;
+  }
+  .subtitle { font-size: 17px; color: #a6adc8; margin-bottom: 28px; }
+  h2 {
+    font-size: 24px;
+    margin: 22px 0 14px;
+  }
+  .cols { display: flex; gap: 28px; }
+  .card {
+    flex: 1;
+    background: #313244;
+    border-radius: 12px;
+    padding: 24px;
+    border-top: 5px solid;
+  }
+  .ns-default  { border-color: #89b4fa; }
+  .ns-system   { border-color: #f38ba8; }
+  .ns-public   { border-color: #a6e3a1; }
+  .ns-lease    { border-color: #fab387; }
+  .ns-default h2 { color: #89b4fa; }
+  .ns-system h2  { color: #f38ba8; }
+  .ns-public h2  { color: #a6e3a1; }
+  .ns-lease h2   { color: #fab387; }
+  ul { list-style: none; }
+  li {
+    font-size: 16px;
+    line-height: 1.7;
+    margin-bottom: 12px;
+    padding-left: 26px;
+    position: relative;
+  }
+  li::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: #89b4fa;
+    font-weight: bold;
+  }
+  .highlight { color: #f9e2af; font-weight: 600; }
+  .k8s { color: #94e2d5; font-weight: 600; }
+  code {
+    background: #11111b;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #a6e3a1;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 15px;
+  }
+  th, td {
+    border: 1px solid #45475a;
+    padding: 12px 14px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #45475a; color: #cdd6f4; font-size: 16px; }
+  td:first-child { color: #94e2d5; font-weight: 600; width: 190px; }
+  .footer { margin-top: 24px; font-size: 14px; color: #6c7086; text-align: center; }
+  .keypoint {
+    background: #11111b;
+    border-left: 4px solid #f9e2af;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-top: 20px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  pre {
+    background: #11111b;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-top: 10px;
+    overflow-x: auto;
+    border: 1px solid #313244;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: #cdd6f4;
+    font-size: 13.5px;
+    line-height: 1.6;
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  .yaml-key   { color: #89b4fa; }
+  .yaml-val   { color: #a6e3a1; }
+  .yaml-cmt   { color: #6c7086; font-style: italic; }
+  .reason-icon { font-size: 22px; margin-right: 8px; }
+  .keypoint.danger { border-left-color: #f38ba8; }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1 -->
+<div class="slide">
+  <h1>Why Use Namespaces?</h1>
+  <p class="subtitle">Dividing one physical cluster into multiple virtual clusters</p>
+
+  <div class="cols">
+    <div class="card ns-default">
+      <h2><span class="reason-icon">🧩</span>Resource Isolation</h2>
+      <ul>
+        <li>Separate <span class="highlight">environments</span> (dev, staging, prod) or teams in one cluster.</li>
+        <li>Workloads don't <span class="highlight">step on each other</span>.</li>
+      </ul>
+    </div>
+    <div class="card ns-public">
+      <h2><span class="reason-icon">🏷️</span>Scope for Names</h2>
+      <ul>
+        <li>Resource names only need to be <span class="highlight">unique within a namespace</span>.</li>
+        <li><code>frontend</code> can exist in both <code>dev</code> and <code>prod</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cols" style="margin-top:28px;">
+    <div class="card ns-system">
+      <h2><span class="reason-icon">🔐</span>Access Control (RBAC)</h2>
+      <ul>
+        <li>Grant permissions <span class="highlight">scoped to a namespace</span>.</li>
+        <li>Team A can't touch <span class="highlight">Team B's resources</span>.</li>
+      </ul>
+    </div>
+    <div class="card ns-lease">
+      <h2><span class="reason-icon">📊</span>Resource Quotas</h2>
+      <ul>
+        <li>Limit <span class="highlight">CPU, memory &amp; object counts</span> per namespace.</li>
+        <li>One team can't <span class="highlight">exhaust the whole cluster</span>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <strong>When NOT to use them:</strong> Namespaces are <span class="highlight">not a hard security boundary</span> for isolating different customers — use separate clusters for that. Also, cluster-wide resources like <code>Nodes</code> and <code>PersistentVolumes</code> are <span class="highlight">not namespaced</span>.
+  </div>
+</div>
+
+<!-- SLIDE 2 -->
+<div class="slide">
+  <h1>Kubernetes: Default Namespaces</h1>
+  <p class="subtitle">Four namespaces every cluster creates out of the box &amp; what they are for</p>
+
+  <div class="cols">
+    <div class="card ns-default">
+      <h2>default</h2>
+      <ul>
+        <li>The namespace where your resources go if you <span class="highlight">don't specify one</span>.</li>
+        <li>Meant for <span class="highlight">user workloads</span> during learning / quick testing.</li>
+        <li>Best practice: create your <span class="highlight">own namespaces</span> for real apps instead of using <code>default</code>.</li>
+      </ul>
+    </div>
+
+    <div class="card ns-system">
+      <h2>kube-system</h2>
+      <ul>
+        <li>Holds objects created by the <span class="highlight">Kubernetes system</span> itself.</li>
+        <li>Runs <span class="highlight">control-plane &amp; core components</span>: <code>kube-dns</code>/CoreDNS, <code>kube-proxy</code>, CNI, metrics-server.</li>
+        <li><span class="highlight">Do not deploy your own apps here</span> — avoid interfering with cluster internals.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cols" style="margin-top:28px;">
+    <div class="card ns-public">
+      <h2>kube-public</h2>
+      <ul>
+        <li>Created automatically and is <span class="highlight">readable by all users</span> (including unauthenticated).</li>
+        <li>Mostly reserved for <span class="highlight">cluster-wide public info</span>.</li>
+        <li>Holds a <code>cluster-info</code> ConfigMap used during <span class="highlight">bootstrap / join</span>.</li>
+      </ul>
+    </div>
+
+    <div class="card ns-lease">
+      <h2>kube-node-lease</h2>
+      <ul>
+        <li>Holds <span class="highlight">Lease objects</span>, one per node, for <span class="highlight">node heartbeats</span>.</li>
+        <li>Lets the control plane detect <span class="highlight">node health</span> efficiently &amp; at scale.</li>
+        <li>Lightweight leases replace heavier status updates, improving <span class="highlight">performance</span>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <strong>One-line answer for interview:</strong>
+    Kubernetes ships with four namespaces — <span style="color:#89b4fa">default</span> (your resources when none is given), <span style="color:#f38ba8">kube-system</span> (control-plane &amp; system components), <span style="color:#a6e3a1">kube-public</span> (publicly readable cluster info), and <span style="color:#fab387">kube-node-lease</span> (per-node heartbeat leases for node health).
+  </div>
+</div>
+
+<!-- SLIDE 3 -->
+<div class="slide">
+  <h1>Default Namespaces — Quick Reference</h1>
+  <p class="subtitle">Purpose at a glance + useful commands</p>
+
+  <table>
+    <tr><th>Namespace</th><th>Purpose</th><th>Who uses it</th></tr>
+    <tr><td>default</td><td>Resources with no namespace specified; casual testing</td><td>Users</td></tr>
+    <tr><td>kube-system</td><td>Core system &amp; control-plane components (CoreDNS, kube-proxy, etc.)</td><td>Kubernetes</td></tr>
+    <tr><td>kube-public</td><td>Publicly readable data; holds <code>cluster-info</code> for bootstrapping</td><td>Everyone (read)</td></tr>
+    <tr><td>kube-node-lease</td><td>Per-node Lease objects for fast node heartbeats / health detection</td><td>Kubernetes</td></tr>
+  </table>
+
+  <h2 style="color:#89b4fa; margin-top:28px;">Handy commands</h2>
+  <ul>
+    <li><code>kubectl get namespaces</code> — list all namespaces (you'll see these four by default).</li>
+    <li><code>kubectl get pods -n kube-system</code> — view system/control-plane pods.</li>
+    <li><code>kubectl get configmap cluster-info -n kube-public</code> — see public cluster info.</li>
+    <li><code>kubectl get leases -n kube-node-lease</code> — see one heartbeat lease per node.</li>
+    <li><code>kubectl create namespace my-app</code> — create your own namespace for real workloads.</li>
+  </ul>
+
+  <div class="keypoint">
+    <strong>Remember:</strong> <code>default</code> = your stuff · <code>kube-system</code> = cluster internals · <code>kube-public</code> = readable by all · <code>kube-node-lease</code> = node heartbeats. For production, put apps in your <span class="highlight">own namespaces</span>, not in <code>default</code> or <code>kube-system</code>.
+  </div>
+
+  <p class="footer">Kubernetes Namespaces — Interview Reference</p>
+</div>
+
+<!-- SLIDE 4 -->
+<div class="slide">
+  <h1>Sample Namespace YAML</h1>
+  <p class="subtitle">Creating a namespace with a quota and limit range</p>
+
+  <div class="cols">
+    <div style="flex:1;">
+      <h2 style="color:#89b4fa;">Basic namespace</h2>
+      <pre><code><span class="yaml-key">apiVersion:</span> <span class="yaml-val">v1</span>
+<span class="yaml-key">kind:</span> <span class="yaml-val">Namespace</span>
+<span class="yaml-key">metadata:</span>
+  <span class="yaml-key">name:</span> <span class="yaml-val">dev</span>
+  <span class="yaml-key">labels:</span>
+    <span class="yaml-key">environment:</span> <span class="yaml-val">development</span>
+    <span class="yaml-key">team:</span> <span class="yaml-val">backend</span></code></pre>
+
+      <h2 style="color:#a6e3a1; margin-top:22px;">Deploy into a namespace</h2>
+      <pre><code><span class="yaml-key">metadata:</span>
+  <span class="yaml-key">name:</span> <span class="yaml-val">web</span>
+  <span class="yaml-key">namespace:</span> <span class="yaml-val">dev</span>  <span class="yaml-cmt"># places it in dev</span></code></pre>
+    </div>
+
+    <div style="flex:1;">
+      <h2 style="color:#fab387;">With a ResourceQuota</h2>
+      <pre><code><span class="yaml-key">apiVersion:</span> <span class="yaml-val">v1</span>
+<span class="yaml-key">kind:</span> <span class="yaml-val">ResourceQuota</span>
+<span class="yaml-key">metadata:</span>
+  <span class="yaml-key">name:</span> <span class="yaml-val">team-a-quota</span>
+  <span class="yaml-key">namespace:</span> <span class="yaml-val">team-a</span>
+<span class="yaml-key">spec:</span>
+  <span class="yaml-key">hard:</span>
+    <span class="yaml-key">requests.cpu:</span> <span class="yaml-val">"4"</span>
+    <span class="yaml-key">requests.memory:</span> <span class="yaml-val">8Gi</span>
+    <span class="yaml-key">limits.cpu:</span> <span class="yaml-val">"8"</span>
+    <span class="yaml-key">limits.memory:</span> <span class="yaml-val">16Gi</span>
+    <span class="yaml-key">pods:</span> <span class="yaml-val">"20"</span></code></pre>
+    </div>
+  </div>
+
+  <h2 style="color:#89b4fa; margin-top:24px;">Useful commands</h2>
+  <ul>
+    <li><code>kubectl apply -f namespace.yaml</code> — create from a file.</li>
+    <li><code>kubectl create namespace dev</code> — create quickly without a file.</li>
+    <li><code>kubectl get pods -n dev</code> — run a command against a namespace.</li>
+    <li><code>kubectl config set-context --current --namespace=dev</code> — set a default namespace.</li>
+  </ul>
+
+  <div class="keypoint">
+    <strong>Tip:</strong> Separate objects in a single YAML file with <code>---</code> so a Namespace, ResourceQuota, and LimitRange can be applied together in one <code>kubectl apply</code>.
+  </div>
+
+  <p class="footer">Kubernetes Namespaces — Interview Reference</p>
+</div>
+
+<!-- SLIDE 5 -->
+<div class="slide">
+  <h1>What Happens If You Delete a Namespace?</h1>
+  <p class="subtitle">A cascading, irreversible delete — everything inside goes with it</p>
+
+  <h2 style="color:#f38ba8;">The delete process</h2>
+  <ul>
+    <li><code>kubectl delete namespace &lt;name&gt;</code> puts it into a <span class="highlight">Terminating</span> phase.</li>
+    <li>Kubernetes deletes <span class="highlight">all namespaced resources</span> inside it.</li>
+    <li><span class="highlight">Finalizers</span> run to clean up before objects are removed.</li>
+    <li>Once empty &amp; all finalizers clear, the namespace itself is deleted.</li>
+  </ul>
+
+  <div class="cols" style="margin-top:22px;">
+    <div class="card ns-system">
+      <h2>❌ Deleted (namespaced)</h2>
+      <ul>
+        <li>Pods, Deployments, StatefulSets, DaemonSets, ReplicaSets</li>
+        <li>Services, Ingresses, NetworkPolicies</li>
+        <li>ConfigMaps, Secrets, ServiceAccounts</li>
+        <li>PVCs &amp; Roles / RoleBindings in that namespace</li>
+      </ul>
+    </div>
+    <div class="card ns-public">
+      <h2>✅ Survives (cluster-scoped)</h2>
+      <ul>
+        <li>Nodes, PersistentVolumes (the PV object)</li>
+        <li>ClusterRoles / ClusterRoleBindings</li>
+        <li>StorageClasses, CRDs, other Namespaces</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 style="color:#fab387; margin-top:22px;">Important side effects</h2>
+  <ul>
+    <li><span class="highlight">Data loss</span> depends on the PV's reclaim policy: <code>Delete</code> wipes the backing volume; <code>Retain</code> keeps the data (reclaim it manually).</li>
+    <li>Deleting <code>LoadBalancer</code> Services removes the <span class="highlight">cloud load balancer</span> they provisioned.</li>
+    <li><span class="highlight">Cannot be undone</span> — no trash/restore. Recovery needs backups (e.g. Velero) or manifests in Git.</li>
+  </ul>
+
+  <div class="keypoint danger">
+    <strong>⚠️ Warning:</strong> Deleting a namespace deletes <span class="highlight">everything inside it</span>. Never delete <code>kube-system</code> — it breaks the cluster. If a namespace is stuck in <span class="highlight">Terminating</span>, a leftover <span class="highlight">finalizer</span> is usually the cause. Always double-check your context with <code>kubectl config current-context</code> first.
+  </div>
+
+  <p class="footer">Kubernetes Namespaces — Interview Reference</p>
+</div>
+
+</body>
+</html>
